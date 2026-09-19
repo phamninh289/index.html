@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hệ Thống An Ninh Mạng Giám Sát Trò Chuyện</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #a8c0ff 0%, #3f2b96 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    /* Container chính phong cách Colorful / Neon Soft */
+    .app-container {
+      width: 100%;
+      max-width: 880px;
+      height: 88vh;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 24px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.8);
+    }
+
+    /* Header Rực Rỡ (Gradient Colorful) */
+    .app-header {
+      background: linear-gradient(90deg, #ff416c 0%, #8a2387 50%, #e94057 100%);
+      color: white;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 15px rgba(233, 64, 87, 0.3);
+      z-index: 10;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.2rem;
+      color: #e94057;
+      position: relative;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    .status-dot {
+      width: 13px;
+      height: 13px;
+      background: #00e676;
+      border-radius: 50%;
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      border: 2px solid white;
+    }
+
+    .user-details .name {
+      font-weight: 700;
+      font-size: 1.15rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .user-details .status {
+      font-size: 0.82rem;
+      opacity: 0.95;
+    }
+
+    /* Nút đổi người gửi trên Header */
+    .sender-switch-btn {
+      background: rgba(255, 255, 255, 0.25);
+      border: 1.5px solid rgba(255, 255, 255, 0.6);
+      color: white;
+      padding: 8px 18px;
+      border-radius: 30px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.25s ease;
+      backdrop-filter: blur(5px);
+    }
+
+    .sender-switch-btn:hover {
+      background: rgba(255, 255, 255, 0.4);
+      transform: translateY(-2px);
+    }
+
+    /* Thanh Trạng Thái An Ninh */
+    .system-status {
+      background: linear-gradient(90deg, #11998e 0%, #38ef7d 100%);
+      color: #ffffff;
+      font-size: 0.85rem;
+      text-align: center;
+      padding: 8px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: inset 0 -2px 5px rgba(0,0,0,0.1);
+    }
+
+    /* Khung Chat */
+    .chat-messages {
+      flex: 1;
+      padding: 24px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      background: #f4f6fb;
+    }
+
+    .message {
+      max-width: 72%;
+      display: flex;
+      flex-direction: column;
+      animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.9) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .message.sent {
+      align-self: flex-end;
+      align-items: flex-end;
+    }
+
+    .message.received {
+      align-self: flex-start;
+      align-items: flex-start;
+    }
+
+    /* Bong bóng tin nhắn Vibrant Colorful */
+    .message-bubble {
+      padding: 14px 20px;
+      border-radius: 22px;
+      font-size: 1.02rem;
+      line-height: 1.5;
+      word-wrap: break-word;
+      position: relative;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      transition: all 0.3s ease;
+    }
+
+    /* Người gửi (Bạn) -> Gradient Hồng Cam */
+    .message.sent .message-bubble {
+      background: linear-gradient(135deg, #f857a6 0%, #ff5858 100%);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+
+    /* Đối phương (Trường Giang Võ) -> Gradient Xanh Tím */
+    .message.received .message-bubble {
+      background: linear-gradient(135deg, #4776e6 0%, #8e54e9 100%);
+      color: white;
+      border-bottom-left-radius: 4px;
+    }
+
+    /* Báo đỏ khi Vi Phạm (Cảnh báo của An Ninh) */
+    .message.deleted .message-bubble {
+      background: #ffe5e5 !important;
+      color: #d32f2f !important;
+      border: 2px solid #ff1744;
+      font-size: 0.95rem;
+      font-style: italic;
+      font-weight: 700;
+      border-radius: 16px !important;
+      box-shadow: 0 4px 15px rgba(255, 23, 68, 0.2);
+    }
+
+    .message-time {
+      font-size: 0.75rem;
+      color: #888;
+      margin-top: 6px;
+      padding: 0 6px;
+    }
+
+    /* Thanh Nhập Liệu Bo Tròn */
+    .chat-input-area {
+      padding: 16px 20px;
+      background: #ffffff;
+      border-top: 1px solid #eef0f5;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .chat-input-area input {
+      flex: 1;
+      border: 2px solid #e0e6ed;
+      background: #f8fafc;
+      padding: 14px 22px;
+      border-radius: 30px;
+      outline: none;
+      font-size: 1.05rem;
+      transition: all 0.25s ease;
+    }
+
+    .chat-input-area input:focus {
+      background: #ffffff;
+      border-color: #ff416c;
+      box-shadow: 0 0 0 4px rgba(255, 65, 108, 0.15);
+    }
+
+    .chat-input-area button.send-btn {
+      background: linear-gradient(135deg, #ff416c 0%, #8a2387 100%);
+      border: none;
+      color: white;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      transition: all 0.25s ease;
+      box-shadow: 0 4px 12px rgba(233, 64, 87, 0.4);
+    }
+
+    .chat-input-area button.send-btn:hover {
+      transform: scale(1.1);
+    }
+
+    .active-role-label {
+      font-size: 0.8rem;
+      color: #666;
+      text-align: right;
+      padding: 0 24px 8px;
+      background: white;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- Header Colorful -->
+  <div class="app-header">
+    <div class="user-info">
+      <div class="avatar" id="avatarBox">
+        TGV
+        <div class="status-dot"></div>
+      </div>
+      <div class="user-details">
+        <div class="name">
+          <span id="chatPartnerName">Trường Giang Võ</span> <i class="fa-solid fa-shield-cat" style="color: #ffe600; font-size: 1.1rem;"></i>
+        </div>
+        <div class="status">Đang trò chuyện trực tiếp</div>
+      </div>
+    </div>
+
+    <!-- Nút Chuyển Người Nhắn (Mô phỏng 2 người) -->
+    <button class="sender-switch-btn" id="switchBtn" onclick="toggleRole()">
+      <i class="fa-solid fa-arrows-rotate"></i> Đang nhập bài: <span id="roleName">Bản Thân</span>
+    </button>
+  </div>
+
+  <!-- Thanh An Ninh Máy Tính -->
+  <div class="system-status">
+    <i class="fa-solid fa-shield-halved"></i> Hệ Thống An Ninh Mạng: Đang giám sát độc hại thời gian thực
+  </div>
+
+  <!-- Khung Chat 2 Người -->
+  <div class="chat-messages" id="chatBox">
+    <div class="message received">
+      <div class="message-bubble">Chào bạn! Chúng mình nhắn tin thảo luận nhóm nhé.</div>
+      <div class="message-time">10:00</div>
+    </div>
+  </div>
+
+  <!-- Nhãn hiển thị vai trò đang nhắn -->
+  <div class="active-role-label" id="roleHint">
+    💡 Bạn đang chuẩn bị nhắn với tư cách: <b style="color: #f857a6;">Bản Thân</b>
+  </div>
+
+  <!-- Thanh Nhập Của 2 Người -->
+  <div class="chat-input-area">
+    <input type="text" id="userInput" placeholder="Nhập tin nhắn..." onkeydown="handleKeyPress(event)">
+    <button class="send-btn" onclick="sendMessage()">
+      <i class="fa-solid fa-paper-plane"></i>
+    </button>
+  </div>
+</div>
+
+<script>
+  let currentRole = 'me'; // 'me': Bản Thân, 'tgv': Trường Giang Võ
+  let messageHistory = [];
+
+  // Từ khóa độc hại đơn lẻ (Khiêu dâm / Quấy rối)
+  const harassmentKeywords = ["co be", "am dao", "buom", "lon", "ks", "khach san", "gai", "chim"];
+  const harassmentPatterns = [
+    "chup hinh cho anh xem di", "chup hinh co be cho anh xem di", "gui hinh anh co be",
+    "gui hinh anh buom", "gui hinh anh am dao", "gui anh di anh khong gui ai dau",
+    "di ks khong em", "bao nhieu tien moi co duoc em", "huu duyen bl"
+  ];
+
+  // Từ khóa thô tục / Chửi thề
+  const profanityKeywords = ["cac", "cl", "dm", "dmm", "cc", "du ma", "dit me"];
+  const profanityPatterns = [
+    "con l", "du ma", "l ma", "dm may", "cho de", "cc", 
+    "dit me may", "du ma may", "con cac", "di me may", 
+    "con cac ba may", "gai me may", "con gai me may"
+  ];
+
+  // Pattern bạo lực
+  const violencePatterns = [
+    "may ve nha may chet voi tao", "ra cong truong gap tao", "tao giet may",
+    "tao giet ca ho nha may", "ngay mai coi chung tao", "chung may chet het voi tao",
+    "khong ai cuu may duoc dau", "may xuong duoi day coi may con mang song khong",
+    "may xuong lau nhanh tao doi day", "tao coi may con cai mang de song khong",
+    "thich var khong", "giet", "chem", "danh", "g.i.e.t", "gi4t", "chems", "may chet voi tao", "chet"
+  ];
+
+  function normalizeText(str) {
+    if (!str) return "";
+    str = str.toLowerCase();
+    str = str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    str = str.replace(/đ/g, "d");
+    str = str.replace(/4/g, "a").replace(/3/g, "e").replace(/1/g, "i").replace(/0/g, "o").replace(/5/g, "s");
+    str = str.replace(/[^a-z0-9\s]/g, "");
+    return str.replace(/\s+/g, " ").trim();
+  }
+
+  function checkViolation(rawText) {
+    const cleanText = normalizeText(rawText);
+    const words = cleanText.split(" ");
+
+    // 1. Quấy rối / Khiêu dâm
+    for (let kw of harassmentKeywords) {
+      if (words.includes(kw) || cleanText.includes(kw)) return "HARASSMENT";
+    }
+    for (let pattern of harassmentPatterns) {
+      if (cleanText.includes(normalizeText(pattern))) return "HARASSMENT";
+    }
+
+    // 2. Bạo lực
+    for (let pattern of violencePatterns) {
+      if (cleanText.includes(normalizeText(pattern))) return "VIOLENCE";
+    }
+
+    // 3. Chửi thề / Thô tục
+    for (let kw of profanityKeywords) {
+      if (words.includes(kw) || cleanText.includes(kw)) return "PROFANITY";
+    }
+    for (let pattern of profanityPatterns) {
+      if (cleanText.includes(normalizeText(pattern))) return "PROFANITY";
+    }
+
+    return null;
+  }
+
+  function checkSpam() {
+    const now = Date.now();
+    messageHistory = messageHistory.filter(timestamp => now - timestamp < 10000);
+    messageHistory.push(now);
+    return messageHistory.length > 6;
+  }
+
+  /* --- CHUYỂN ĐỔI NGƯỜI NHẮN THỦ CÔNG --- */
+  function toggleRole() {
+    const roleNameEl = document.getElementById("roleName");
+    const roleHintEl = document.getElementById("roleHint");
+
+    if (currentRole === 'me') {
+      currentRole = 'tgv';
+      roleNameEl.innerText = "Trường Giang Võ";
+      roleHintEl.innerHTML = `💡 Bạn đang chuẩn bị nhắn với tư cách: <b style="color: #8e54e9;">Trường Giang Võ</b>`;
+    } else {
+      currentRole = 'me';
+      roleNameEl.innerText = "Bản Thân";
+      roleHintEl.innerHTML = `💡 Bạn đang chuẩn bị nhắn với tư cách: <b style="color: #f857a6;">Bản Thân</b>`;
+    }
+  }
+
+  /* --- HÀM GỬI TIN NHẮN --- */
+  function sendMessage() {
+    const inputEl = document.getElementById("userInput");
+    const text = inputEl.value.trim();
+    if (!text) return;
+
+    inputEl.value = "";
+    const chatBox = document.getElementById("chatBox");
+    const now = new Date();
+    const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+    const msgDiv = document.createElement("div");
+    msgDiv.className = `message ${currentRole === 'me' ? 'sent' : 'received'}`;
+
+    const bubbleDiv = document.createElement("div");
+    bubbleDiv.className = "message-bubble";
+    bubbleDiv.innerText = text;
+
+    const timeDiv = document.createElement("div");
+    timeDiv.className = "message-time";
+    timeDiv.innerText = (currentRole === 'me' ? 'Bạn • ' : 'Trường Giang Võ • ') + timeStr;
+
+    msgDiv.appendChild(bubbleDiv);
+    msgDiv.appendChild(timeDiv);
+    chatBox.appendChild(msgDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    // Kiểm tra vi phạm
+    const violationType = checkViolation(text);
+    const isSpamming = checkSpam();
+
+    if (violationType || isSpamming) {
+      // Xuất hiện đúng 2s (2000ms) rồi hệ thống tự động xóa
+      setTimeout(() => {
+        msgDiv.classList.add("deleted")
+        let warningMsg = "";
+
+        if (isSpamming) {
+          warningMsg = "Hệ thống đã xóa tin nhắn do có liên quan đến tin nhắn rác";
+        } else if (violationType === "VIOLENCE") {
+          warningMsg = "Hệ thống đã xóa tin nhắn do có liên quan đến bạo lực học đường/ gia đình";
+        } else if (violationType === "HARASSMENT") {
+          warningMsg = "Hệ thống đã xóa tin nhắn do có liên quan đến khiêu dâm, quấy rối tình dục";
+        } else if (violationType === "PROFANITY") {
+          warningMsg = "Hệ thống đã xóa tin nhắn do chứa từ ngữ thô tục, xúc phạm người khác";
+        }
+
+        bubbleDiv.innerText = `⚠️ ${warningMsg}`;
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }, 2000);
+    }
+  }
+
+  function handleKeyPress(e) {
+    if (e.key === "Enter") sendMessage();
+  }
+</script>
+</body>
+</html>
